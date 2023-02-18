@@ -1,23 +1,27 @@
 library(tidyverse)
 library(tm)
 library(SnowballC)
+library(tidytext)
+library(textdata)
+library(ggplot2)
+library(wordcloud)
+library(reshape2)
+
+
+# Show "Keeping up with the Kardashians" has 20 seasons each with many episodes.
+# Our project enables to make quick conclusions on episode content if someone wants to be up-to-date but has no time to watch.
+
+# The shows transcript can be found for example here https://subslikescript.com/series/Keeping_Up_with_the_Kardashians-1086761#google_vignette
 
 # Word Frequency measures the most frequently occurring words or concepts in a given text; will help to analyze the words or expressions Kardashians use most frequently
-
-# Word association a form of analyzing the content of text data in search of relations between terms
-
-# Keyword Extraction - the most relevant terms within a text, terms that summarize the contents of text in list form, keyword extraction can be used to index data to be searched and to generate word clouds (a visual representation of text data)
-
-# Sentiment Analysis - automated process of understanding of the emotional intent of words to infer whether a section of text is positive, negative or neutral
 
 text <- readLines("kuwtk_se19e02.txt")
 text
 
+# Cleaning the transcript
+
 docs <- Corpus(VectorSource(text))
 toSpace <- content_transformer(function (x , pattern ) gsub(pattern, " ", x))
-docs <- tm_map(docs, toSpace, "/")
-docs <- tm_map(docs, toSpace, "@")
-docs <- tm_map(docs, toSpace, "\\|")
 docs <- tm_map(docs, stripWhitespace)
 docs <- tm_map(docs, removePunctuation)
 docs <- tm_map(docs, removeNumbers)
@@ -30,7 +34,7 @@ setdiff("so", stopwords("english"))
 setdiff("like", stopwords("english"))
 
 docs <- tm_map(docs, removeWords, stopwords("english"))
-docs <- tm_map(docs, stemDocument)
+# docs <- tm_map(docs, stemDocument)
 
 dtm <- TermDocumentMatrix(docs) %>% 
        as.matrix() %>% 
@@ -38,9 +42,71 @@ dtm <- TermDocumentMatrix(docs) %>%
        data.frame(word = names(.), freq = .) %>% 
        arrange(desc(freq)) %>% 
        filter(freq > 10)
-
-dtm
+    
+head(dtm)
 
 # Kardashians mostly use their own stopping words in text
-# docs <- tm_map(docs, removeWords, c("like", "yeah", "dont", "just", "know", "god")) 
+docs <- tm_map(docs, removeWords, c("like", "yeah", "dont", "just", "know", "god", "really", "gonna", "get", "got", "right", "can", "cant"))
 
+dtm <- TermDocumentMatrix(docs) %>%
+       as.matrix() %>%
+       rowSums() %>%
+       data.frame(word = names(.), freq = .) %>%
+       arrange(desc(freq)) %>% 
+       filter(freq > 6)
+
+rownames(dtm) <- NULL
+
+head(dtm, 25)
+
+# Sentiment Analysis - automated process of understanding of the emotional intent of words to infer whether a section of text is positive, negative or neutral
+
+get_sentiments("nrc") %>% distinct(sentiment)
+
+get_sentiments("nrc") %>% 
+  filter(sentiment == "joy") %>%
+  inner_join(dtm)
+
+get_sentiments("nrc") %>% 
+  filter(sentiment == "positive") %>%
+  inner_join(dtm)
+
+get_sentiments("nrc") %>% 
+  filter(sentiment == "negative") %>%
+  inner_join(dtm)
+
+sentiment <- get_sentiments("nrc") %>% 
+  right_join(dtm) %>% 
+  na.omit() %>% 
+  group_by(sentiment) %>% 
+  arrange(desc(freq)) %>% 
+  ungroup()
+
+# The word frequency shows that the episode include some kind of prank on one of the family members, there is some talk about coronavirus so the episode can be set in time without knowledge of airing time. We see usage of "kim", "kris" who is "mom". 
+
+dtm %>%
+  with(wordcloud(word, freq, max.words = 25, scale = c(0.1, 3)))
+
+# Most of the emotions in the episode were positive anticipation and trust
+
+ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~word, ncol = 2) +
+  labs(title = "Most frequent words their usage and sentiment")
+
+ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
+  geom_col(show.legend = FALSE)
+
+
+
+
+
+sentiment %>%
+  acast(word ~ sentiment, value.var = "freq", fill = 0) %>%
+  comparison.cloud(colors = c("gray30", "gray60"),
+                   max.words = 25)
+
+  
+# Word association a form of analyzing the content of text data in search of relations between terms
+
+# Keyword Extraction - the most relevant terms within a text, terms that summarize the contents of text in list form, keyword extraction can be used to index data to be searched and to generate word clouds (a visual representation of text data)
