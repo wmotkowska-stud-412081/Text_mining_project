@@ -97,15 +97,6 @@ ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
 ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
   geom_col(show.legend = FALSE)
 
-
-
-
-
-sentiment %>%
-  acast(word ~ sentiment, value.var = "freq", fill = 0) %>%
-  comparison.cloud(colors = c("gray30", "gray60"),
-                   max.words = 25)
-
   
 # Word association a form of analyzing the content of text data in search of relations between terms
 
