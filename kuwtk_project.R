@@ -80,13 +80,6 @@ kards.show.analysis <- function(name) {
           filter(sentiment == "negative") %>%
           inner_join(dtm)
         
-        sentiment <- get_sentiments("nrc") %>% 
-          right_join(dtm) %>% 
-          na.omit() %>% 
-          group_by(sentiment) %>% 
-          arrange(desc(freq)) %>% 
-          ungroup()
-        
         name
         
         # Transcript with Kardashian stopping words (like, you know)
@@ -98,7 +91,7 @@ kards.show.analysis <- function(name) {
         
         # Transcript wo Kardashian stopping words (like, you know)
         
-        return(sentiment)
+        return(dtm)
         
         
         # Word association a form of analyzing the content of text data in search of relations between terms
@@ -109,8 +102,15 @@ kards.show.analysis <- function(name) {
 }
 
 name <- "kuwtk_se19e02.txt"
-sentiment <- kards.show.analysis(name)
+dtm <- kards.show.analysis(name)
 name <- str_sub(name, start = 1, end =  -5)
+
+sentiment <- get_sentiments("nrc") %>% 
+          right_join(dtm) %>% 
+          na.omit() %>% 
+          group_by(sentiment) %>% 
+          arrange(desc(freq)) %>% 
+          ungroup()
 
 pdf(file = paste0(name, ".pdf"),
             title = name,
