@@ -1,3 +1,4 @@
+#libraries 
 library(tidyverse)
 library(tm)
 library(SnowballC)
@@ -7,13 +8,9 @@ library(ggplot2)
 library(wordcloud)
 library(reshape2)
 
+# Data
 
-# Show "Keeping up with the Kardashians" has 20 seasons each with many episodes.
-# Our project enables to make quick conclusions on episode content if someone wants to be up-to-date but has no time to watch.
-
-# The shows transcript can be found for example here https://subslikescript.com/series/Keeping_Up_with_the_Kardashians-1086761#google_vignette
-
-# Word Frequency measures the most frequently occurring words or concepts in a given text; will help to analyze the words or expressions Kardashians use most frequently
+# 1st function
 
 kards.show.analysis <- function(name) {
     text <- readLines(name)
@@ -37,7 +34,7 @@ kards.show.analysis <- function(name) {
     setdiff("like", stopwords("english"))
     
     docs <- tm_map(docs, removeWords, stopwords("english"))
-    # docs <- tm_map(docs, stemDocument)
+    
     
     dtm <- TermDocumentMatrix(docs) %>% 
         as.matrix() %>% 
@@ -98,113 +95,15 @@ kards.show.analysis <- function(name) {
     
     # Keyword Extraction - the most relevant terms within a text, terms that summarize the contents of text in list         form, keyword extraction can be used to index data to be searched and to generate word clouds (a visual         representation of text data)
     
-    
 }
 
 name <- "kuwtk_se19e02.txt"
+name1 <- str_sub(name, start = 1, end =  -5)
 dtm <- kards.show.analysis(name)
-name <- str_sub(name, start = 1, end =  -5)
 
-sentiment <- get_sentiments("nrc") %>% 
-    right_join(dtm) %>% 
-    na.omit() %>% 
-    group_by(sentiment) %>% 
-    arrange(desc(freq)) %>% 
-    ungroup()
+summary(dtm)
 
-pdf(file = paste0(name, ".pdf"),
-    title = name,
-    width = 15,
-    height = 7)
-
-dtm %>%
-    with(wordcloud(word, freq, max.words = 25, scale = c(0.1, 3)))
-
-# Wordcloud Bing sentiment
-
-dtm %>% inner_join(get_sentiments("bing")) %>%
-    count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-    comparison.cloud(color = c("#fc413a","#2da612"), max.words = 25)
-
-# Wordcloud NRC sentiment
-
-dtm %>% inner_join(get_sentiments("nrc") %>% filter(sentiment %in% c("positive", "negative"))) %>%
-    count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
-    comparison.cloud(color = c("#fc413a","#2da612"), max.words = 25)
-
-
-ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
-    geom_col(show.legend = FALSE) +
-    facet_wrap(~word, ncol = 2) +
-    labs(title = "Most frequent words their usage and sentiment")
-
-ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
-    geom_col(show.legend = FALSE)
-
-dev.off()
-
-# The word frequency shows that the episode include some kind of prank on one of the family members, there is some talk about coronavirus so the episode can be set in time without knowledge of airing time. We see usage of "kim", "kris" who is "mom". 
-
-# Most of the emotions in the episode were positive anticipation and trust
-
-
-
-# most frequent words in each sentiment 
-
-
-sentiment %>%
-    group_by(sentiment) %>%
-    top_n(5) %>%
-    ungroup() %>%
-    mutate(word = reorder(word, freq)) %>%
-    ggplot(aes(freq, word, fill = sentiment)) +
-    geom_col(show.legend = FALSE) +
-    facet_wrap(~sentiment, scales = "free_y") +
-    labs(x = NULL,
-         y = NULL,
-         title = "Top words contributing to each sentiment")
-
-
-
-# Overall sentiment NRC: (positive: +1, negative: -1, neutral: 0)
-overall_sentiment <- sentiment %>% 
-    mutate(sentiment = recode(sentiment, "fear" = "negative", "disgust" = "negative", "anger" = "negative","sadness"="negative", "joy"="positive","surprise"="positive","trust"="positive","anticipation"="neutral" )) %>% 
-    mutate(value =
-               case_when(sentiment == "negative" ~ freq*(-1), 
-                         sentiment == "positive" ~ freq,
-                         sentiment == "neutral" ~ 0)) %>%
-    group_by(sentiment) %>% 
-    summarise(sum_sentiment = sum(value),
-              .groups = 'drop')%>%
-    as.data.frame()
-
-overall_sentiment
-
-sum(overall_sentiment$sum_sentiment)
-
-#overall sentiment of the episode is positive
-
-
-
-#overall sentiment Bing
-
-overall_sentiment_bing<-dtm %>% inner_join(get_sentiments("bing")) %>%
-    mutate(value =
-               case_when(sentiment == "negative" ~ freq*(-1), 
-                         sentiment == "positive" ~ freq,
-                         sentiment == "neutral" ~ 0)) %>%
-    group_by(sentiment) %>% 
-    summarise(sum_sentiment = sum(value),
-              .groups = 'drop')%>%
-    as.data.frame()
-
-overall_sentiment_bing
-
-sum(overall_sentiment_bing$sum_sentiment)
-
-
-
-### Sentiment over time in episode
+# 2nd function
 
 kards.show.analysis.all <- function(name) {
     text <- readLines(name)
@@ -260,15 +159,99 @@ kards.show.analysis.all <- function(name) {
     
     name
     
-    
     return(dtm)
-    
     
 }
 
-name <- "kuwtk_se19e02.txt"
+dtm <- kards.show.analysis.all(name)    
+summary(dtm)
+
+# Modeling
+
+dtm <- kards.show.analysis(name) 
+
+sentiment <- get_sentiments("nrc") %>% 
+    right_join(dtm) %>% 
+    na.omit() %>% 
+    group_by(sentiment) %>% 
+    arrange(desc(freq)) %>% 
+    ungroup()
+
+# most frequent words
+
+dtm %>%
+    with(wordcloud(word, freq, max.words = 25, scale = c(0.1, 3)))
+
+# sentiment Bing
+
+dtm %>% inner_join(get_sentiments("bing")) %>%
+    count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(color = c("#fc413a","#2da612"), max.words = 25)
+
+# sentiment NRC
+dtm %>% inner_join(get_sentiments("nrc") %>% filter(sentiment %in% c("positive", "negative"))) %>%
+    count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(color = c("#fc413a","#2da612"), max.words = 25)
+
+
+ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~word, ncol = 2) +
+    labs(title = "Most frequent words their usage and sentiment")
+
+
+ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
+    geom_col(show.legend = FALSE)
+
+
+# Top words contributing to each sentiment
+sentiment %>%
+    group_by(sentiment) %>%
+    top_n(5) %>%
+    ungroup() %>%
+    mutate(word = reorder(word, freq)) %>%
+    ggplot(aes(freq, word, fill = sentiment)) +
+    geom_col(show.legend = FALSE) +
+    facet_wrap(~sentiment, scales = "free_y") +
+    labs(x = NULL,
+         y = NULL,
+         title = "Top words contributing to each sentiment")
+
+# Overall sentiment NRC: (positive: +1, negative: -1, neutral: 0)
+overall_sentiment <- sentiment %>% 
+    mutate(sentiment = recode(sentiment, "fear" = "negative", "disgust" = "negative", "anger" = "negative","sadness"="negative", "joy"="positive","surprise"="positive","trust"="positive","anticipation"="neutral" )) %>% 
+    mutate(value =
+               case_when(sentiment == "negative" ~ freq*(-1), 
+                         sentiment == "positive" ~ freq,
+                         sentiment == "neutral" ~ 0)) %>%
+    group_by(sentiment) %>% 
+    summarise(sum_sentiment = sum(value),
+              .groups = 'drop')%>%
+    as.data.frame()
+
+overall_sentiment
+
+sum(overall_sentiment$sum_sentiment)
+
+# Overall sentiment Bing
+
+overall_sentiment_bing<-dtm %>% inner_join(get_sentiments("bing")) %>%
+    mutate(value =
+               case_when(sentiment == "negative" ~ freq*(-1), 
+                         sentiment == "positive" ~ freq,
+                         sentiment == "neutral" ~ 0)) %>%
+    group_by(sentiment) %>% 
+    summarise(sum_sentiment = sum(value),
+              .groups = 'drop')%>%
+    as.data.frame()
+
+overall_sentiment_bing
+
+sum(overall_sentiment_bing$sum_sentiment)
+
 dtm <- kards.show.analysis.all(name)
-name <- str_sub(name, start = 1, end =  -5)
+
+# sentiment over time
 
 sentiment.order.kept <- get_sentiments("nrc") %>% 
     right_join(dtm) %>% 
@@ -315,3 +298,9 @@ sentiment.order.kept%>%
     )
 
 
+pdf(file = paste0(name1, ".pdf"),
+    title = name,
+    width = 15,
+    height = 7)
+
+dev.off()

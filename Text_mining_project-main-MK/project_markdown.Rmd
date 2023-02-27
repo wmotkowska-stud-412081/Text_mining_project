@@ -251,10 +251,7 @@ sentiment <- get_sentiments("nrc") %>%
     arrange(desc(freq)) %>% 
     ungroup()
 
-pdf(file = paste0(name1, ".pdf"),
-    title = name,
-    width = 15,
-    height = 7)
+
 
 ```
 
@@ -432,6 +429,10 @@ sentiment.order.kept%>%
 ```
 
 ```{r echo=T}
+pdf(file = paste0(name1, ".pdf"),
+    title = name,
+    width = 15,
+    height = 7)
 
 dev.off()
 ```
@@ -445,6 +446,6 @@ The data sample when filtered by frequency higher than six and only words in NRC
 
 
 ## Summary 
-The aim was obtained as one can simply substitute the name of the file and analyse a completely different episode of the show. The project evaluated extend of existence of each sentiment in the episode, sentiment of the whole episode and utilized multiple sentiment dictionaries. Ten NRC sentiments were present in the episode
+The aim was obtained as one can simply substitute the name of the file and analyse a completely different episode of the show. The project evaluated extend of existence of each sentiment in the episode, sentiment of the whole episode and utilized multiple sentiment dictionaries. Ten NRC sentiments were present in the episode, out of which trust and anticipation appear most frequently. The sentiment of the episode changes as the action progresses and anticipation is present but increased closer to the end of the episode. 
 
 
