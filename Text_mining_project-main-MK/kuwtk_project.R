@@ -120,6 +120,19 @@ pdf(file = paste0(name, ".pdf"),
 dtm %>%
     with(wordcloud(word, freq, max.words = 25, scale = c(0.1, 3)))
 
+# Wordcloud Bing sentiment
+
+dtm %>% inner_join(get_sentiments("bing")) %>%
+    count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(color = c("#fc413a","#2da612"), max.words = 25)
+
+# Wordcloud NRC sentiment
+
+dtm %>% inner_join(get_sentiments("nrc") %>% filter(sentiment %in% c("positive", "negative"))) %>%
+    count(word, sentiment, sort = TRUE) %>% acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+    comparison.cloud(color = c("#fc413a","#2da612"), max.words = 25)
+
+
 ggplot(sentiment, aes(sentiment, freq, fill = sentiment)) +
     geom_col(show.legend = FALSE) +
     facet_wrap(~word, ncol = 2) +
@@ -152,9 +165,8 @@ sentiment %>%
          title = "Top words contributing to each sentiment")
 
 
-# Overall sentiment: (positive: +1, negative: -1, neutral: 0)
 
-
+# Overall sentiment NRC: (positive: +1, negative: -1, neutral: 0)
 overall_sentiment <- sentiment %>% 
     mutate(sentiment = recode(sentiment, "fear" = "negative", "disgust" = "negative", "anger" = "negative","sadness"="negative", "joy"="positive","surprise"="positive","trust"="positive","anticipation"="neutral" )) %>% 
     mutate(value =
@@ -171,6 +183,26 @@ overall_sentiment
 sum(overall_sentiment$sum_sentiment)
 
 #overall sentiment of the episode is positive
+
+
+
+#overall sentiment Bing
+
+overall_sentiment_bing<-dtm %>% inner_join(get_sentiments("bing")) %>%
+    mutate(value =
+               case_when(sentiment == "negative" ~ freq*(-1), 
+                         sentiment == "positive" ~ freq,
+                         sentiment == "neutral" ~ 0)) %>%
+    group_by(sentiment) %>% 
+    summarise(sum_sentiment = sum(value),
+              .groups = 'drop')%>%
+    as.data.frame()
+
+overall_sentiment_bing
+
+sum(overall_sentiment_bing$sum_sentiment)
+
+
 
 ### Sentiment over time in episode
 
@@ -262,14 +294,24 @@ if (n_leftover > 0) {
         sentiment.order.kept
 }
 sentiment.order.kept%>% 
-    mutate(sentiment = recode(sentiment, "fear" = "negative", "disgust" = "negative", "anger" = "negative","sadness"="negative", "joy"="positive","surprise"="positive","trust"="positive","anticipation"="neutral" )) %>% 
+    mutate(
+        sentiment = recode(sentiment, 
+                           "fear" = "negative", "disgust" = "negative", 
+                           "anger"="negative","sadness"="negative",
+                           "joy"="positive","surprise"="positive","trust"="positive","anticipation"="neutral" )) %>% 
     group_by(sentiment, group) %>%
     summarise(num_words = n_distinct(word)) %>%
     arrange(sentiment, group)%>%
     filter(sentiment == c("positive", "negative", "neutral"))%>%
-    ggplot(aes(group, num_words, colour = sentiment)) + geom_line() +
+    ggplot(aes(group, num_words, colour = sentiment)) + geom_line()+
+    scale_color_manual(values=c("#fc413a","#d18c15", "#2da612"))+
     labs(x = "time of the episode",
          y = "number of words in sentiment",
-         title = "The changes in sentiment over time")
+         title = "The changes in sentiment as episode progresses")+
+    theme(axis.text.x=element_blank(), 
+          axis.ticks.x=element_blank(),
+          axis.line.x = element_line(color="black", size = 0.5),
+          axis.line.y = element_line(color="black", size = 0.5)
+    )
 
 

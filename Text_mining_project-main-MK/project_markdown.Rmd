@@ -352,7 +352,7 @@ sum(overall_sentiment$sum_sentiment)
 ```
 
 
-To validate the results similar data transformation was performed using Bing sentiment dictionary.The difference between sum of negative sentiment and sum of positive sentiment is lower when Bing dictionary was use. However, the overall conclusion remains the same. The episode is perceived positively. Based on the graph it can be observed that the episode starts slightly positive, then a mixture of all sentiments, series of negative peeks and positive peeks. Closer to the end of the episode 
+To validate the results similar data transformation was performed using Bing sentiment dictionary.The difference between sum of negative sentiment and sum of positive sentiment is lower when Bing dictionary was use. However, the overall conclusion remains the same. 
 
 ```{r echo=T}
 overall_sentiment_bing<-dtm %>% inner_join(get_sentiments("bing")) %>%
@@ -371,7 +371,7 @@ sum(overall_sentiment_bing$sum_sentiment)
 ```
 
 
-Last part of the project examines the change in sentiment throughout the episode. To perform such analysis the words were kept in order of appearance in the transcript and then were split into groups containing about 20 elements in each. When data was not divisible without a remainder by 20, the group size was increased evenly through each group.  
+Last part of the project examines the change in sentiment throughout the episode. To perform such analysis the words were kept in order of appearance in the transcript and then were split into groups containing about 20 elements in each. When data was not divisible without a remainder by 20, the group size was increased evenly through each group. The episode is perceived positively. Based on the graph it can be observed that the episode starts slightly positive, then a mixture of all sentiments, series of negative peeks and positive peeks. Closer to the end of the episode neutral (anticipation) raises, most probably resulting in hooking the viewer and increased audience retention.  
 
 
 ```{r echo=T, message=FALSE, warning=FALSE, results='hide' }
@@ -431,10 +431,20 @@ sentiment.order.kept%>%
 
 ```
 
-
-
-
 ```{r echo=T}
 
 dev.off()
 ```
+
+
+## Evaluation 
+
+The first thing which is noticed when analyzing the sentiment of the words used in this specific episode, is that prank has negative sentiment based on NRC dictionary. This is interesting because from the perspective of the pranked person this might be negative, but from the audience perspective it might not be the case. </br>
+The data sample when filtered by frequency higher than six and only words in NRC dictionary, is rather small. However, two dictionaries were used to check the validity of the results. 
+
+
+
+## Summary 
+The aim was obtained as one can simply substitute the name of the file and analyse a completely different episode of the show. The project evaluated extend of existence of each sentiment in the episode, sentiment of the whole episode and utilized multiple sentiment dictionaries. Ten NRC sentiments were present in the episode
+
+
